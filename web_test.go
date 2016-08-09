@@ -596,6 +596,25 @@ func TestNoColorOutput(t *testing.T) {
 	}
 }
 
+// test that output contains ASCII color codes by default
+func TestFilterParamsDefault(t *testing.T) {
+	s := NewServer()
+	var logOutput bytes.Buffer
+	logger := log.New(&logOutput, "", 0)
+	s.Logger = logger
+	s.Post("/test", func() string {
+		return "test"
+	})
+	req := buildTestRequest("POST", "/test", "password=12345&password_confirm=12345", map[string][]string{"Content-Type": {"application/x-www-form-urlencoded"}}, nil)
+	var buf bytes.Buffer
+	iob := ioBuffer{input: nil, output: &buf}
+	c := scgiConn{wroteHeaders: false, req: req, headers: make(map[string][]string), fd: &iob}
+	s.Process(&c, req)
+	if strings.Contains(logOutput.String(), "12345") {
+		t.Fatalf("Params are not being filtered")
+	}
+}
+
 // a malformed SCGI request should be discarded and not cause a panic
 func TestMaformedScgiRequest(t *testing.T) {
 	var headerBuf bytes.Buffer

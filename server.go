@@ -28,6 +28,7 @@ type ServerConfig struct {
 	RecoverPanic bool
 	Profiler     bool
 	ColorOutput  bool
+	FilterParams []string
 }
 
 // Server represents a web.go server.
@@ -289,7 +290,7 @@ func (s *Server) logRequest(ctx Context, sTime time.Time) {
 	logEntry.WriteString(" - " + s.ttyGreen(req.Method+" "+requestPath))
 	logEntry.WriteString(" - " + duration.String())
 	if len(ctx.Params) > 0 {
-		logEntry.WriteString(" - " + s.ttyWhite(fmt.Sprintf("Params: %v\n", ctx.Params)))
+		s.logParams(&logEntry, ctx.Params)
 	}
 	ctx.Server.Logger.Print(logEntry.String())
 }
@@ -308,6 +309,25 @@ func (s *Server) ttyColor(msg string, colorCode string) string {
 	} else {
 		return msg
 	}
+}
+
+func (s *Server) logParams(logEntry *bytes.Buffer, params map[string]string) {
+	logEntry.WriteString(" - Params: {")
+	i := 0
+	for k, v := range params {
+		out := v
+		for _, s := range s.Config.FilterParams {
+			if strings.Contains(k, s) {
+				out = "[filtered]"
+			}
+		}
+		fmt.Fprintf(logEntry, "%q: %q", k, out)
+		i += 1
+		if i < len(params) {
+			logEntry.WriteString(", ")
+		}
+	}
+	logEntry.WriteString("}")
 }
 
 // the main route handler in web.go

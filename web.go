@@ -269,6 +269,7 @@ func SetLogger(logger *log.Logger) {
 var Config = &ServerConfig{
 	RecoverPanic: true,
 	ColorOutput:  true,
+	FilterParams: []string{"password"},
 }
 
 var mainServer = NewServer()
